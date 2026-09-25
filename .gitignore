@@ -1,0 +1,26 @@
+# Dependencies
+backend/node_modules/
+frontend/node_modules/
+
+# Environment and local configuration
+backend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# Runtime output
+backend/logs/*
+backend/uploads/*
+!backend/uploads/.gitkeep
+frontend/.next/
+frontend/out/
+
+# Local databases and generated files
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/

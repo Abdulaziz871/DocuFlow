@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    direction: rtl;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    font-feature-settings: 'ss01' on, 'cv01' on;
+  }
+  ::selection {
+    @apply bg-brand-100 text-brand-700;
+  }
+}
+
+@layer components {
+  /* Surfaces */
+  .card {
+    @apply rounded-xl bg-white border border-border shadow-card p-5;
+  }
+  .panel {
+    @apply rounded-xl bg-white border border-border;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-brand text-brand-foreground
+      px-4 py-2.5 text-sm font-medium shadow-sm transition-colors
+      hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200
+      disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-white text-ink
+      px-4 py-2.5 text-sm font-medium transition-colors
+      hover:bg-canvas hover:border-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200;
+  }
+  .btn-ghost-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-transparent text-rose-600
+      px-3 py-2 text-sm font-medium transition-colors hover:bg-rose-50 hover:border-rose-100;
+  }
+
+  /* Forms */
+  .input-field {
+    @apply w-full rounded-lg border border-border bg-white px-3.5 py-2.5 text-sm text-ink
+      placeholder:text-muted/70 transition-colors
+      focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand-100;
+  }
+  .field-label {
+    @apply mb-1.5 block text-sm font-medium text-ink;
+  }
+
+  /* Data display */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium leading-none;
+  }
+  .table-shell {
+    @apply overflow-hidden rounded-xl border border-border bg-white;
+  }
+  .table-shell table {
+    @apply w-full text-sm;
+  }
+  .table-shell thead {
+    @apply bg-canvas;
+  }
+  .table-shell th {
+    @apply px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+  .table-shell td {
+    @apply px-4 py-3.5 text-ink;
+  }
+  .table-shell tbody tr {
+    @apply border-t border-border transition-colors hover:bg-canvas/70;
+  }
+}
