@@ -7,6 +7,8 @@ function errorHandler(err, req, res, next) {
   if (err instanceof multer.MulterError) {
     const message = err.code === 'LIMIT_FILE_SIZE' ? 'File is too large.' : err.message;
     err = new ApiError(400, message);
+  } else if (err.name === 'ValidationError') {
+    err = new ApiError(400, Object.values(err.errors).map((e) => e.message).join(' '));
   }
 
   const statusCode = err.statusCode || 500;

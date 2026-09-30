@@ -21,6 +21,8 @@ const ACTIONS = [
   { value: 'setStatus', label: 'تغيير الحالة' },
 ];
 
+const NUMERIC_OPERATORS = ['greaterThan', 'lessThan'];
+
 type Condition = { field: string; operator: string; value: string };
 
 // Coerce a typed string into number/boolean where it clearly looks like one,
@@ -122,6 +124,9 @@ export default function RuleForm({ onCreated }: { onCreated: () => void }) {
               </select>
               {c.operator !== 'exists' && (
                 <input
+                  type={NUMERIC_OPERATORS.includes(c.operator) ? 'number' : 'text'}
+                  required={NUMERIC_OPERATORS.includes(c.operator)}
+                  step="any"
                   value={c.value}
                   onChange={(e) => updateCondition(i, { value: e.target.value })}
                   placeholder="القيمة"

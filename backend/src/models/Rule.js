@@ -34,7 +34,18 @@ const ruleSchema = new mongoose.Schema(
     documentType: { type: String, default: 'any' }, // e.g. "invoice", "receipt", "any"
     isActive: { type: Boolean, default: true },
     // all conditions in the list must match (AND). Extend to support OR groups later if needed.
-    conditions: { type: [conditionSchema], default: [] },
+    conditions: {
+      type: [conditionSchema],
+      default: [],
+      validate: {
+        // Number("20 الف") is NaN, which would make the condition silently never match.
+        validator: (conds) =>
+          conds.every(
+            (c) => !['greaterThan', 'lessThan'].includes(c.operator) || (c.value !== '' && c.value !== null && Number.isFinite(Number(c.value)))
+          ),
+        message: 'greaterThan/lessThan conditions need a plain numeric value (e.g. 20000).',
+      },
+    },
     actions: { type: [actionSchema], default: [] },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },

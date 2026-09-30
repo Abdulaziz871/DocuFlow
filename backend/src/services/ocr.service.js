@@ -31,6 +31,9 @@ async function extractText(filePath, mimeType) {
     return trimmed;
   }
 
+  // Tesseract hangs on Vercel (worker thread + CDN language download); Gemini reads the image directly instead.
+  if (process.env.VERCEL) return '';
+
   try {
     // Tesseract caches downloaded language data in the cwd by default, which is read-only on Vercel.
     const { data } = await Tesseract.recognize(filePath, 'eng+ara', { cachePath: os.tmpdir() });
