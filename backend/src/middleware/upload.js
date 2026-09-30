@@ -1,9 +1,14 @@
 const multer = require('multer');
 const path = require('path');
+const os = require('os');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const { uploadDir, maxFileSizeMb } = require('../config/env');
+const { uploadDir: configuredUploadDir, maxFileSizeMb } = require('../config/env');
 const ApiError = require('../utils/ApiError');
+
+// Vercel's deployment filesystem is read-only outside of os.tmpdir() (/tmp),
+// so the configured relative "uploads" dir can't be created there.
+const uploadDir = process.env.VERCEL ? path.join(os.tmpdir(), 'uploads') : configuredUploadDir;
 
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
