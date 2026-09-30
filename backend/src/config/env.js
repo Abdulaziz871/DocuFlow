@@ -30,7 +30,7 @@ module.exports = {
   uploadDir: process.env.UPLOAD_DIR || 'uploads',
 
   rateLimitWindowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  rateLimitMax: Number(process.env.RATE_LIMIT_MAX) || 100,
+  rateLimitMax: Number(process.env.RATE_LIMIT_MAX) || 300,
 
   webhookTimeoutMs: Number(process.env.WEBHOOK_TIMEOUT_MS) || 5000,
 

@@ -110,10 +110,23 @@ const ingestDocument = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: doc });
 });
 
+const IN_PROGRESS_STATUSES = ['received', 'ocr_processing', 'ai_extracting', 'rules_processing'];
+const STALE_AFTER_MS = 10 * 60 * 1000;
+
+// If the function running processDocument is killed (timeout, crash), the document stays
+// mid-pipeline forever and the dashboard keeps polling it; mark those as failed.
+function failStaleDocuments(filter) {
+  return Document.updateMany(
+    { ...filter, status: { $in: IN_PROGRESS_STATUSES }, updatedAt: { $lt: new Date(Date.now() - STALE_AFTER_MS) } },
+    { status: 'failed', errorMessage: 'Processing timed out. Please upload the file again.' }
+  );
+}
+
 // GET /api/v1/documents
 const listDocuments = asyncHandler(async (req, res) => {
   const { status, page = 1, limit = 20 } = req.query;
   const filter = { company: req.user.company };
+  await failStaleDocuments(filter);
   if (status) filter.status = status;
 
   const documents = await Document.find(filter)
@@ -127,6 +140,7 @@ const listDocuments = asyncHandler(async (req, res) => {
 
 // GET /api/v1/documents/:id
 const getDocument = asyncHandler(async (req, res) => {
+  await failStaleDocuments({ _id: req.params.id, company: req.user.company });
   const doc = await Document.findOne({ _id: req.params.id, company: req.user.company }).populate('matchedRules.rule', 'name');
   if (!doc) throw new ApiError(404, 'Document not found.');
   res.json({ success: true, data: doc });

@@ -9,6 +9,9 @@ const routes = require('./routes');
 
 const app = express();
 
+// Behind Vercel's proxy; without this req.ip is the proxy's IP and every user shares one rate-limit bucket.
+app.set('trust proxy', 1);
+
 // ---- Security & core middleware ----
 app.use(helmet());
 app.use(cors({ origin: clientUrl, credentials: true }));
