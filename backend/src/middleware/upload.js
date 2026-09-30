@@ -34,10 +34,13 @@ function fileFilter(req, file, cb) {
   cb(null, true);
 }
 
+// Vercel rejects request bodies over 4.5 MB before they reach Express; 4 MB leaves room for multipart overhead.
+const effectiveMaxMb = process.env.VERCEL ? Math.min(maxFileSizeMb, 4) : maxFileSizeMb;
+
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: maxFileSizeMb * 1024 * 1024 },
+  limits: { fileSize: effectiveMaxMb * 1024 * 1024 },
 });
 
 module.exports = upload;

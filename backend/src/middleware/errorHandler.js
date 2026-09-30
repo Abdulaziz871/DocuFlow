@@ -1,7 +1,14 @@
+const multer = require('multer');
 const logger = require('../utils/logger');
+const ApiError = require('../utils/ApiError');
 
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
+  if (err instanceof multer.MulterError) {
+    const message = err.code === 'LIMIT_FILE_SIZE' ? 'File is too large.' : err.message;
+    err = new ApiError(400, message);
+  }
+
   const statusCode = err.statusCode || 500;
   const message = err.isOperational ? err.message : 'Internal server error';
 

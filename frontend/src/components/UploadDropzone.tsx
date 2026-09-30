@@ -5,6 +5,9 @@ import { UploadCloud, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import apiClient from '@/lib/apiClient';
 
+// Vercel caps request bodies at 4.5 MB; keep in sync with backend/src/middleware/upload.js.
+const MAX_FILE_MB = 4;
+
 export default function UploadDropzone({ onUploaded }: { onUploaded: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -12,15 +15,22 @@ export default function UploadDropzone({ onUploaded }: { onUploaded: () => void 
   const [error, setError] = useState<string | null>(null);
 
   async function handleFile(file: File) {
-    setBusy(true);
     setError(null);
+    if (file.size > MAX_FILE_MB * 1024 * 1024) {
+      setError(`حجم الملف أكبر من ${MAX_FILE_MB} ميجابايت`);
+      return;
+    }
+    setBusy(true);
     const form = new FormData();
     form.append('file', file);
     try {
-      await apiClient.post('/documents/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const res = await apiClient.post('/documents/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const doc = res.data?.data;
+      if (doc?.status === 'failed') setError(`تم رفع الملف لكن فشلت معالجته: ${doc.errorMessage || 'خطأ غير معروف'}`);
       onUploaded();
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'فشل رفع الملف');
+      if (err?.response?.status === 413) setError(`حجم الملف أكبر من ${MAX_FILE_MB} ميجابايت`);
+      else setError(err?.response?.data?.message || 'فشل رفع الملف');
     } finally {
       setBusy(false);
     }
@@ -51,7 +61,7 @@ export default function UploadDropzone({ onUploaded }: { onUploaded: () => void 
       <p className="text-sm font-medium text-ink">
         {busy ? 'جارٍ الرفع والمعالجة...' : 'اسحب ملف PDF أو صورة هنا، أو اضغط للاختيار'}
       </p>
-      <p className="text-xs text-muted">الحد الأقصى 10 ميجابايت — PDF, PNG, JPG</p>
+      <p className="text-xs text-muted">الحد الأقصى {MAX_FILE_MB} ميجابايت — PDF, PNG, JPG</p>
       {error && <p className="text-xs font-medium text-rose-600">{error}</p>}
       <input
         ref={inputRef}

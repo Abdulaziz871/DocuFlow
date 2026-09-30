@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { geminiApiKey, geminiModel } = require('../config/env');
 const ApiError = require('../utils/ApiError');
@@ -28,14 +29,12 @@ Rules:
   "customFields": object
 }
 
-Raw document text:
-"""
-${rawText}
-"""
+${rawText ? `Raw document text:\n"""\n${rawText}\n"""` : 'The document is attached as a file; read it directly.'}
 `;
 
 const RETRYABLE_STATUS = [429, 500, 503, 504];
-const MAX_ATTEMPTS = 3;
+const MAX_ATTEMPTS = 2;
+const FALLBACK_MODEL = 'gemini-flash-lite-latest';
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Gemini occasionally returns transient 429/503 ("high demand") errors that succeed
@@ -57,16 +56,31 @@ async function generateWithRetry(model, prompt) {
   throw lastErr;
 }
 
-async function extractStructuredData(rawText) {
-  const model = genAI.getGenerativeModel({ model: geminiModel });
+// When OCR found no text (scanned PDF, photo), pass the file itself so Gemini can read it visually.
+async function extractStructuredData(rawText, file) {
+  const request = rawText
+    ? buildPrompt(rawText)
+    : [
+        buildPrompt(''),
+        { inlineData: { mimeType: file.mimeType, data: fs.readFileSync(file.path).toString('base64') } },
+      ];
 
+  // If the primary model stays overloaded (503 "high demand"), try a lighter model before failing the document.
+  const modelNames = [...new Set([geminiModel, FALLBACK_MODEL])];
   let result;
-  try {
-    result = await generateWithRetry(model, buildPrompt(rawText));
-  } catch (err) {
-    logger.error(`Gemini API call failed after retries: ${err.message}`);
-    throw new ApiError(502, 'AI extraction service unavailable. Please try again shortly.');
+  for (const name of modelNames) {
+    const model = genAI.getGenerativeModel({
+      model: name,
+      generationConfig: { responseMimeType: 'application/json' },
+    });
+    try {
+      result = await generateWithRetry(model, request);
+      break;
+    } catch (err) {
+      logger.error(`Gemini API call failed after retries [${name}]: ${err.message}`);
+    }
   }
+  if (!result) throw new ApiError(502, 'AI extraction service unavailable. Please try again shortly.');
 
   const responseText = result.response.text().trim();
   const cleaned = responseText.replace(/^```(json)?/i, '').replace(/```$/i, '').trim();

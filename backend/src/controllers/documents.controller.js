@@ -1,3 +1,4 @@
+const fs = require('fs');
 const Document = require('../models/Document');
 const Company = require('../models/Company');
 const asyncHandler = require('../utils/asyncHandler');
@@ -23,7 +24,7 @@ async function processDocument(doc) {
 
     doc.status = 'ai_extracting';
     await doc.save();
-    const extractedData = await geminiService.extractStructuredData(rawText);
+    const extractedData = await geminiService.extractStructuredData(rawText, { path: doc.storagePath, mimeType: doc.mimeType });
     doc.extractedData = extractedData;
     doc.documentType = extractedData.documentType || 'other';
 
@@ -66,6 +67,8 @@ async function processDocument(doc) {
       await emailService.sendFailureAlert({ company, document: doc });
     }
   }
+  // /tmp on Vercel is small and per-instance; nothing reads the file after processing.
+  if (process.env.VERCEL) fs.rm(doc.storagePath, { force: true }, () => {});
   return doc;
 }
 
